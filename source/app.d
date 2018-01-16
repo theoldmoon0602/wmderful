@@ -11,6 +11,7 @@ void main()
   }
   auto screen = xcb_setup_roots_iterator(xcb_get_setup(conn)).data;
 
+  // xcb_grab_server(conn);
   // SubstructureRedirectはroot windowにのみ設定できる
   uint select_input_val =
     XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT| // CirtulateRequest, ConfigureRequest, MapRequest
@@ -19,6 +20,6 @@ void main()
   if (auto error = xcb_request_check(conn, cookie)) {
     fatal("another window manager is already running (can't select SubstructureRedirect)");
   }
-
+  // xcb_ungrab_server(conn);
   info("wmDerful has been started");
 }
