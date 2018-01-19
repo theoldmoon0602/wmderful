@@ -83,7 +83,6 @@ void select_xkb_events_for_device(Conf conf) {
 }
 
 void handle_xkb_event(Conf conf, xcb_generic_event_t* event) {
-	info("XKB_EVENT");
 	switch (event.pad0) {
 	case XCB_XKB_NEW_KEYBOARD_NOTIFY:
 		info("XCB_XKB_NEW_KEYBOARD_NOTIFY");

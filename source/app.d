@@ -41,11 +41,6 @@ void main()
 			auto e = cast(xcb_map_request_event_t*)ev;
 			maprequest(conf, e);
 			break;
-
-		case XCB_MOTION_NOTIFY:
-			break;
-		case XCB_BUTTON_RELEASE:
-			break;
 		default:
 			if (ev.response_type == conf.event_base_xkb) {
 				handle_xkb_event(conf, ev);
