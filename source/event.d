@@ -1,5 +1,6 @@
 import xcb.xcb;
 import xkbcommon.xkbcommon;
+import xkbcommon.keysyms;
 
 import conf;
 import keysymdef;
@@ -22,6 +23,35 @@ void keypress(Conf conf, xcb_key_press_event_t* e) {
 
 	auto sym = xkb_state_key_get_one_sym(conf.state, e.detail);
 	info(keysym_to_string(sym));
+
+	if (sym == XKB_KEY_Return) {
+		uint new_window_id = xcb_generate_id(conf.conn);
+		uint[] values = [
+		conf.screen.white_pixel,
+		conf.screen.white_pixel,
+		1,
+		XCB_COPY_FROM_PARENT
+		];
+		short x = 0, y = 0, w = 200, h = 200, border_width = 0;
+		xcb_create_window(conf.conn,
+				cast(ubyte)XCB_COPY_FROM_PARENT,
+				new_window_id, 
+				conf.root,
+				x, y, w, h,
+				border_width,
+				cast(ushort)XCB_WINDOW_CLASS_INPUT_OUTPUT,
+				conf.screen.root_visual,
+				cast(uint)(XCB_CW_BACK_PIXEL|XCB_CW_BORDER_PIXEL|XCB_CW_OVERRIDE_REDIRECT|XCB_CW_COLORMAP),
+				values.ptr);
+		xcb_map_window(conf.conn, new_window_id);
+		xcb_flush(conf.conn);
+		info("create window");
+
+	}
+}
+
+void maprequest(Conf conf, xcb_map_request_event_t* e) {
+	xcb_map_window(conf.conn, e.window);
 }
 
 // XCB_EVENT as enum

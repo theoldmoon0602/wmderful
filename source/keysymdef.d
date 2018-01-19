@@ -1,4 +1,3 @@
-
 string keysym_to_string(int keysym) {
 	string[int] conv_table = ([
 		0xffffff: "XK_VoidSymbol",   /* Void symbol */

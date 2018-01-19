@@ -36,13 +36,15 @@ void main()
 		case XCB_KEY_PRESS:
 			auto e = cast(xcb_key_press_event_t*)ev;
 			keypress(conf, e);
-			info("XCB_BUTTON_PRESS");
 			break;
+		case XCB_MAP_REQUEST:
+			auto e = cast(xcb_map_request_event_t*)ev;
+			maprequest(conf, e);
+			break;
+
 		case XCB_MOTION_NOTIFY:
-			info("XCB_MOTION_NOTIFY");
 			break;
 		case XCB_BUTTON_RELEASE:
-			info("XCB_BUTTON_RELEASE");
 			break;
 		default:
 			if (ev.response_type == conf.event_base_xkb) {
