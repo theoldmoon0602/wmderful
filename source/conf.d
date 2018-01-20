@@ -3,6 +3,8 @@ import xcb.xkb;
 import xcb.keysyms;
 import xkbcommon.xkbcommon;
 
+import client;
+
 import std.experimental.logger;
 
 class Conf {
@@ -10,9 +12,11 @@ public:
 	const uint ROOT_EVENT_MASK = XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT|
 		XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY|
 		XCB_EVENT_MASK_STRUCTURE_NOTIFY|
-		// XCB_EVENT_MASK_EXPOSURE|
+		XCB_EVENT_MASK_EXPOSURE|
 		XCB_EVENT_MASK_ENTER_WINDOW|
 		XCB_EVENT_MASK_LEAVE_WINDOW|
+		XCB_EVENT_MASK_POINTER_MOTION|
+		// XCB_EVENT_MASK_POINTER_MOTION_HINT|
 		XCB_EVENT_MASK_KEY_PRESS|
 		XCB_EVENT_MASK_KEY_RELEASE|
 		XCB_EVENT_MASK_BUTTON_PRESS|
@@ -32,6 +36,14 @@ public:
 	xkb_keymap* keymap;
 	int device_id;
 	ubyte event_base_xkb;  // 飛んできたイベントがxkbに関連するものかどうかを識別するのに使う
+
+	Client[xcb_window_t] clients;
+	Client current;
+
+	Client dragging = null;
+	int oldx, oldy;
+	int winx, winy;
+
 }
 
 // atomic な動作が必要になったらxcb_grab_serverを思い出して

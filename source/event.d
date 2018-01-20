@@ -4,6 +4,7 @@ import xkbcommon.keysyms;
 
 import conf;
 import keysymdef;
+import client;
 
 import std.experimental.logger;
 
@@ -26,70 +27,87 @@ void keypress(Conf conf, xcb_key_press_event_t* e) {
 
 	if (sym == XKB_KEY_space) {
 		import std.process;
-		spawnProcess("rxvt");
+		spawnProcess("gnome-terminal");
 		info("spawn process");
 	}
 }
 
-void maprequest(Conf conf, xcb_map_request_event_t* e) {
-	auto geometry_c = xcb_get_geometry(conf.conn, e.window);
-	auto geometry_r = xcb_get_geometry_reply(conf.conn, geometry_c, null);
-	if (geometry_r is null) {
-		warning("failed to get geometry");
-		return;
+void buttonpress(Conf conf, xcb_button_press_event_t* e) {
+	if (e.detail == XCB_BUTTON_INDEX_1 && (e.state & XCB_MOD_MASK_1)) {  // Alt
+		if (conf.current !is null) {
+
+			info("GRAAAAAAAAAAAAAAAAB");
+
+
+			auto geometry_c = xcb_get_geometry(conf.conn, conf.current.window);
+			auto geometry_r = xcb_get_geometry_reply(conf.conn, geometry_c, null);
+			if (geometry_r is null) {
+				warning("failed to get geometry");
+				return;
+			}
+
+			conf.dragging = conf.current;
+			conf.oldx = geometry_r.x-e.root_x;
+			conf.oldy = geometry_r.y-e.root_y;
+
+			// ushort event_mask = XCB_EVENT_MASK_BUTTON_PRESS|XCB_EVENT_MASK_BUTTON_RELEASE|
+			// 		XCB_EVENT_MASK_BUTTON_MOTION|
+			// 		XCB_EVENT_MASK_POINTER_MOTION;
+			//
+			// xcb_grab_pointer(conf.conn, 0, conf.root, event_mask,
+			// 		cast(ubyte)XCB_GRAB_MODE_ASYNC, cast(ubyte)XCB_GRAB_MODE_ASYNC, 
+			// 		cast(uint)XCB_NONE, cast(uint)XCB_NONE, cast(uint)XCB_CURRENT_TIME);
+		}
 	}
-	
+}
+void motionnotify(Conf conf, xcb_motion_notify_event_t* e) {
+	if (conf.dragging !is null) {
+		info("moving");
+		uint[] values = [
+			conf.oldx+e.root_x,
+			conf.oldy+e.root_y,
+		];
+		xcb_configure_window(conf.conn, conf.dragging.window, cast(ushort)(XCB_CONFIG_WINDOW_X|XCB_CONFIG_WINDOW_Y), values.ptr);
+		xcb_flush(conf.conn);
+	}
+}
+void buttonrelease(Conf conf, xcb_button_release_event_t* e) {
+	if (e.detail == XCB_BUTTON_INDEX_1 || !(e.state & XCB_MOD_MASK_1)) {
+		info("UNGRABBBBBBBBBBB");
+		conf.dragging = null;
+		// xcb_ungrab_pointer(conf.conn, XCB_CURRENT_TIME);
+	}
+}
+
+void destroynotify(Conf conf, xcb_destroy_notify_event_t* e) {
+	if (e.window in conf.clients) {
+		xcb_destroy_window(conf.conn, conf.clients[e.window].frame);
+		conf.clients.remove(e.window);
+		info("unmanage window: ", e.window);
+	}
+}
+
+void maprequest(Conf conf, xcb_map_request_event_t* e) {
+	if (e.window !in conf.clients) {
+		map_new_client(conf, e);
+	}
+}
+
+void focusin(Conf conf, xcb_focus_in_event_t* e) {
+	if (auto client = e.event in conf.clients) {
+		conf.current = *client;
+		info("focus in to: ", conf.current.window);
+	}
+}
+
+void expose(Conf conf, xcb_expose_event_t* e) {
 	auto attributes_c = xcb_get_window_attributes(conf.conn, e.window);
 	auto attributes_r = xcb_get_window_attributes_reply(conf.conn, attributes_c, null);
 	if (attributes_r is null) {
 		warning("failed to get window attributes");
 		return;
 	}
-
-
-	xcb_change_window_attributes(conf.conn, conf.root, XCB_CW_EVENT_MASK, &conf.NO_EVENT_MASK);
-
-	 uint frame_id = xcb_generate_id(conf.conn);
-	 uint mask = XCB_CW_BACK_PIXEL|XCB_CW_BORDER_PIXEL|XCB_CW_BIT_GRAVITY|XCB_CW_WIN_GRAVITY|
-	 	XCB_CW_OVERRIDE_REDIRECT|XCB_CW_EVENT_MASK|XCB_CW_COLORMAP;
-	
-	 uint event_mask = XCB_EVENT_MASK_STRUCTURE_NOTIFY|
-	 	XCB_EVENT_MASK_ENTER_WINDOW|
-	 	XCB_EVENT_MASK_LEAVE_WINDOW|
-	 	XCB_EVENT_MASK_EXPOSURE|
-	 	XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT|
-	 	XCB_EVENT_MASK_POINTER_MOTION|
-	 	XCB_EVENT_MASK_BUTTON_PRESS|
-	 	XCB_EVENT_MASK_BUTTON_RELEASE;
-	
-	 uint[] values = [
-	 	conf.screen.white_pixel,  // BACK_PIXEL
-	 	conf.screen.white_pixel,  // BORDER_PIXEL
-	 	XCB_GRAVITY_NORTH_WEST,  // BIT_GRAVITY
-	 	XCB_GRAVITY_NORTH_WEST,  // WIN_GRAVITY
-	 	1,  // OVERRIDE_REDIRECT
-	 	event_mask,  // EVENT_MASK
-	 	XCB_COPY_FROM_PARENT  // COLORMAP
-	 ];
-	
-	 xcb_create_window(conf.conn,
-	 		cast(ubyte)XCB_COPY_FROM_PARENT,
-	 		frame_id, 
-	 		conf.root,
-	 		geometry_r.x, geometry_r.y, geometry_r.width, geometry_r.height,
-	 		5,
-	 		XCB_COPY_FROM_PARENT,
-	 		conf.screen.root_visual,
-	 		mask,
-	 		values.ptr);
-	
-	xcb_reparent_window(conf.conn, e.window, frame_id, 0, 0);
-	xcb_map_window(conf.conn, e.window);
-	// xcb_map_window(conf.conn, frame_id);
-	xcb_change_window_attributes(conf.conn, conf.root, XCB_CW_EVENT_MASK, &conf.ROOT_EVENT_MASK);
-	xcb_flush(conf.conn);
-
-	info("window mapped");
+	info("got attributes");
 
 }
 

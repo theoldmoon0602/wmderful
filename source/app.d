@@ -37,9 +37,33 @@ void main()
 			auto e = cast(xcb_key_press_event_t*)ev;
 			keypress(conf, e);
 			break;
+		case XCB_DESTROY_NOTIFY:
+			auto e = cast(xcb_destroy_notify_event_t*)ev;
+			destroynotify(conf, e);
+			break;
+		case XCB_EXPOSE:
+			auto e = cast(xcb_expose_event_t*)ev;
+			expose(conf, e);
+			break;
 		case XCB_MAP_REQUEST:
 			auto e = cast(xcb_map_request_event_t*)ev;
 			maprequest(conf, e);
+			break;
+		case XCB_BUTTON_PRESS:
+			auto e = cast(xcb_button_press_event_t*)ev;
+			buttonpress(conf, e);
+			break;
+		case XCB_MOTION_NOTIFY:
+			auto e = cast(xcb_motion_notify_event_t*)ev;
+			motionnotify(conf, e);
+			break;
+		case XCB_BUTTON_RELEASE:
+			auto e = cast(xcb_button_release_event_t*)ev;
+			buttonrelease(conf, e);
+			break;
+		case XCB_FOCUS_IN:
+			auto e = cast(xcb_focus_in_event_t*)ev;
+			focusin(conf, e);
 			break;
 		default:
 			if (ev.response_type == conf.event_base_xkb) {
