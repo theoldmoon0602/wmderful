@@ -1,4 +1,7 @@
 import xcb.xcb;
+import xcb.keysyms;
+
+import xkbcommon.keysyms;
 
 import conf;
 
@@ -80,10 +83,16 @@ void map_new_client(Conf conf, xcb_map_request_event_t* e) {
 			e.window, XCB_NONE,
 			XCB_BUTTON_INDEX_1,  // LEFT BUTTON
 			XCB_MOD_MASK_ANY);  // Super
+	xcb_grab_key(conf.conn, 0, e.window,
+			XCB_MOD_MASK_1,
+			*xcb_key_symbols_get_keycode(conf.keysyms, XKB_KEY_q),
+			XCB_GRAB_MODE_ASYNC,
+			XCB_GRAB_MODE_ASYNC);
+
 	uint window_event = XCB_EVENT_MASK_STRUCTURE_NOTIFY|
 		XCB_EVENT_MASK_PROPERTY_CHANGE|
-		XCB_EVENT_MASK_ENTER_WINDOW;//|
-		// XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT;
+		XCB_EVENT_MASK_ENTER_WINDOW;
+
 	xcb_change_window_attributes(conf.conn, e.window, XCB_CW_EVENT_MASK, &window_event);
 	uint[] values = [5];
 	xcb_configure_window(conf.conn, e.window, XCB_CONFIG_WINDOW_BORDER_WIDTH, values.ptr);
@@ -154,4 +163,9 @@ void unfocus_client(Conf conf) {
 
 	change_border_color(conf, conf.focusing, 0x324d5c);
 	conf.focusing = null;
+}
+
+void quit_cilent(Conf conf, Client client) {
+	xcb_destroy_window(conf.conn, client.window);
+	xcb_flush(conf.conn);
 }

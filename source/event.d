@@ -25,6 +25,10 @@ void keypress(Conf conf, xcb_key_press_event_t* e) {
 	auto sym = xkb_state_key_get_one_sym(conf.state, e.detail);
 	info(keysym_to_string(sym));
 
+	if (sym == XKB_KEY_q && (e.state &XCB_MOD_MASK_1) && conf.focusing !is null) {
+		quit_cilent(conf, conf.focusing);
+	}
+
 	if (sym == XKB_KEY_space) {
 		import std.process;
 		spawnProcess("gnome-terminal");
