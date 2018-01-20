@@ -61,9 +61,9 @@ void main()
 			auto e = cast(xcb_button_release_event_t*)ev;
 			buttonrelease(conf, e);
 			break;
-		case XCB_FOCUS_IN:
-			auto e = cast(xcb_focus_in_event_t*)ev;
-			focusin(conf, e);
+		case XCB_ENTER_NOTIFY:
+			auto e = cast(xcb_enter_notify_event_t*)ev;
+			enternotify(conf, e);
 			break;
 		default:
 			if (ev.response_type == conf.event_base_xkb) {

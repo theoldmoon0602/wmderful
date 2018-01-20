@@ -16,7 +16,7 @@ public:
 		XCB_EVENT_MASK_ENTER_WINDOW|
 		XCB_EVENT_MASK_LEAVE_WINDOW|
 		XCB_EVENT_MASK_POINTER_MOTION|
-		// XCB_EVENT_MASK_POINTER_MOTION_HINT|
+		XCB_EVENT_MASK_POINTER_MOTION_HINT|
 		XCB_EVENT_MASK_KEY_PRESS|
 		XCB_EVENT_MASK_KEY_RELEASE|
 		XCB_EVENT_MASK_BUTTON_PRESS|
@@ -38,9 +38,10 @@ public:
 	ubyte event_base_xkb;  // 飛んできたイベントがxkbに関連するものかどうかを識別するのに使う
 
 	Client[xcb_window_t] clients;
-	Client current;
+	Client focusing;
 
-	Client dragging = null;
+	// for move window
+	bool is_moving = false;
 	int oldx, oldy;
 	int winx, winy;
 
