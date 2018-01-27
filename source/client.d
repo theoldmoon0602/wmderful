@@ -32,80 +32,80 @@ void map_new_client(Conf conf, xcb_map_request_event_t* e) {
 		return;
 	}
 
-
-	// xcb_change_window_attributes(conf.conn, conf.root, XCB_CW_EVENT_MASK, &conf.NO_EVENT_MASK);
-
-	//  uint frame_id = xcb_generate_id(conf.conn);
-	//  uint mask = XCB_CW_BACK_PIXEL|XCB_CW_BORDER_PIXEL|XCB_CW_BIT_GRAVITY|XCB_CW_WIN_GRAVITY|
-	//  	XCB_CW_OVERRIDE_REDIRECT|XCB_CW_EVENT_MASK|XCB_CW_COLORMAP;
-	//
-	//  uint event_mask = XCB_EVENT_MASK_STRUCTURE_NOTIFY|
-	//  	XCB_EVENT_MASK_ENTER_WINDOW|
-	//  	XCB_EVENT_MASK_LEAVE_WINDOW|
-	//  	XCB_EVENT_MASK_EXPOSURE|
-	//  	XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT|
-	//  	XCB_EVENT_MASK_POINTER_MOTION|
-	//  	XCB_EVENT_MASK_BUTTON_PRESS|
-	//  	XCB_EVENT_MASK_BUTTON_RELEASE;
-	//
-	//  uint[] values = [
-	//  	conf.screen.white_pixel,  // BACK_PIXEL
-	//  	conf.screen.white_pixel,  // BORDER_PIXEL
-	//  	XCB_GRAVITY_NORTH_WEST,  // BIT_GRAVITY
-	//  	XCB_GRAVITY_NORTH_WEST,  // WIN_GRAVITY
-	//  	1,  // OVERRIDE_REDIRECT
-	//  	event_mask,  // EVENT_MASK
-	//  	XCB_COPY_FROM_PARENT  // COLORMAP
-	//  ];
-	//
-	//  xcb_create_window(conf.conn,
-	//  		cast(ubyte)XCB_COPY_FROM_PARENT,
-	//  		frame_id, 
-	//  		conf.root,
-	//  		geometry_r.x, geometry_r.y, geometry_r.width, geometry_r.height,
-	//  		5,
-	//  		XCB_COPY_FROM_PARENT,
-	//  		conf.screen.root_visual,
-	//  		mask,
-	//  		values.ptr);
-	//
-	//  xcb_reparent_window(conf.conn, e.window, frame_id, 0, 0);
-	// xcb_map_window(conf.conn, frame_id);
-	xcb_map_window(conf.conn, e.window);
-	// xcb_change_window_attributes(conf.conn, conf.root, XCB_CW_EVENT_MASK, &conf.ROOT_EVENT_MASK);
-
-	xcb_flush(conf.conn);
-
-	foreach (mod_mask; [cast(ushort)0, cast(ushort)XCB_MOD_MASK_2]) {
-		xcb_grab_button(conf.conn, 1, e.window,
-				XCB_EVENT_MASK_BUTTON_PRESS|
-				XCB_EVENT_MASK_BUTTON_RELEASE|
-				XCB_EVENT_MASK_POINTER_MOTION,
-				XCB_GRAB_MODE_ASYNC,
-				XCB_GRAB_MODE_ASYNC,
-				XCB_NONE, XCB_NONE,
-				XCB_BUTTON_INDEX_1,  // LEFT BUTTON
-				XCB_MOD_MASK_1|mod_mask);  // Alt
-		xcb_grab_key(conf.conn, 1, e.window,
-				XCB_MOD_MASK_1|mod_mask,
-				*xcb_key_symbols_get_keycode(conf.keysyms, XKB_KEY_q),
-				XCB_GRAB_MODE_ASYNC,
-				XCB_GRAB_MODE_ASYNC);
+	auto geometry_r = get_window_geometry(conf, e.window);
+	if (geometry_r is null) {
+		warning("failed to get window geometory");
+		return;
 	}
 
-	uint window_event = XCB_EVENT_MASK_ENTER_WINDOW|XCB_EVENT_MASK_BUTTON_PRESS;
 
-	xcb_change_window_attributes(conf.conn, e.window, XCB_CW_EVENT_MASK, &window_event);
-	uint[] values = [5];
-	xcb_configure_window(conf.conn, e.window, XCB_CONFIG_WINDOW_BORDER_WIDTH, values.ptr);
+	xcb_change_window_attributes(conf.conn, conf.root, XCB_CW_EVENT_MASK, &conf.NO_EVENT_MASK);
+
+	uint frame_id = xcb_generate_id(conf.conn);
+	uint mask = XCB_CW_OVERRIDE_REDIRECT|XCB_CW_EVENT_MASK|XCB_CW_COLORMAP;
+	
+	uint event_mask = 
+		XCB_EVENT_MASK_ENTER_WINDOW|
+		XCB_EVENT_MASK_LEAVE_WINDOW|
+		XCB_EVENT_MASK_POINTER_MOTION|
+		XCB_EVENT_MASK_BUTTON_PRESS|
+		XCB_EVENT_MASK_BUTTON_RELEASE;
+	
+	uint[] values = [
+		1,  // OVERRIDE_REDIRECT
+		event_mask,  // EVENT_MASK
+		XCB_COPY_FROM_PARENT  // COLORMAP
+	];
+	
+	xcb_create_window(conf.conn,
+			cast(ubyte)XCB_COPY_FROM_PARENT,
+			frame_id, 
+			conf.root,
+			geometry_r.x, geometry_r.y, geometry_r.width, geometry_r.height,
+			5,
+			XCB_COPY_FROM_PARENT,
+			conf.screen.root_visual,
+			mask,
+			values.ptr);
+	
+	xcb_reparent_window(conf.conn, e.window, frame_id, 0, 0);
+	xcb_map_window(conf.conn, frame_id);
+	xcb_map_window(conf.conn, e.window);
+	xcb_change_window_attributes(conf.conn, conf.root, XCB_CW_EVENT_MASK, &conf.ROOT_EVENT_MASK);
 
 	xcb_flush(conf.conn);
 
+	foreach (window; [frame_id, e.window]) {
+		foreach (mod_mask; [cast(ushort)0, cast(ushort)XCB_MOD_MASK_2]) {
+			xcb_grab_button(conf.conn, 1, window,
+					XCB_EVENT_MASK_BUTTON_PRESS|
+					XCB_EVENT_MASK_BUTTON_RELEASE|
+					XCB_EVENT_MASK_POINTER_MOTION,
+					XCB_GRAB_MODE_ASYNC,
+					XCB_GRAB_MODE_ASYNC,
+					XCB_NONE, XCB_NONE,
+					XCB_BUTTON_INDEX_1,  // LEFT BUTTON
+					XCB_MOD_MASK_1|mod_mask);  // Alt
+			xcb_grab_key(conf.conn, 1, frame_id,
+					XCB_MOD_MASK_1|mod_mask,
+					*xcb_key_symbols_get_keycode(conf.keysyms, XKB_KEY_q),
+					XCB_GRAB_MODE_ASYNC,
+					XCB_GRAB_MODE_ASYNC);
+		}
+	}
+	uint window_event = XCB_EVENT_MASK_ENTER_WINDOW|XCB_EVENT_MASK_BUTTON_PRESS;
+
+	// xcb_change_window_attributes(conf.conn, e.window, XCB_CW_EVENT_MASK, &window_event);
+	// values = [5];
+	// xcb_configure_window(conf.conn, e.window, XCB_CONFIG_WINDOW_BORDER_WIDTH, values.ptr);
+
+	xcb_flush(conf.conn);
 
 	auto new_client = new Client();
 	new_client.window = e.window;
-	// new_client.frame = frame_id;
+	new_client.frame = frame_id;
 	conf.clients[e.window] = new_client;
+	conf.clients[frame_id] = new_client;
 	focus_client(conf, new_client);
 
 	info("window mapped: ", e.window);
@@ -137,7 +137,7 @@ void change_border_color(Conf conf, Client client, int color) {
 
 	// apply to window
 	values = [pixmap];
-	xcb_change_window_attributes(conf.conn, client.window, XCB_CW_BORDER_PIXMAP, values.ptr);
+	xcb_change_window_attributes(conf.conn, client.frame, XCB_CW_BORDER_PIXMAP, values.ptr);
 
 	xcb_free_pixmap(conf.conn, pixmap);
 	xcb_free_gc(conf.conn, gc);
@@ -169,5 +169,9 @@ void unfocus_client(Conf conf) {
 
 void quit_cilent(Conf conf, Client client) {
 	xcb_destroy_window(conf.conn, client.window);
+	xcb_destroy_window(conf.conn, client.frame);
 	xcb_flush(conf.conn);
+
+	conf.clients.remove(client.window);
+	conf.clients.remove(client.frame);
 }

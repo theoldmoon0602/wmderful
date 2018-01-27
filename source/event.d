@@ -38,15 +38,15 @@ void keypress(Conf conf, xcb_key_press_event_t* e) {
 
 void buttonpress(Conf conf, xcb_button_press_event_t* e) {
 	if (e.detail == XCB_BUTTON_INDEX_1 && (e.state & XCB_MOD_MASK_1)) {  // Alt
-		if (conf.focusing !is null) {
-			auto geometry_c = xcb_get_geometry(conf.conn, conf.focusing.window);
+		if (conf.focusing !is null && conf.is_moving is null) {
+			auto geometry_c = xcb_get_geometry(conf.conn, conf.focusing.frame);
 			auto geometry_r = xcb_get_geometry_reply(conf.conn, geometry_c, null);
 			if (geometry_r is null) {
 				warning("failed to get geometry");
 				return;
 			}
 
-			conf.is_moving = true;
+			conf.is_moving = conf.focusing;
 			conf.oldx = geometry_r.x-e.root_x;
 			conf.oldy = geometry_r.y-e.root_y;
 
@@ -55,20 +55,22 @@ void buttonpress(Conf conf, xcb_button_press_event_t* e) {
 	}
 }
 void motionnotify(Conf conf, xcb_motion_notify_event_t* e) {
-	if (conf.is_moving) {
-		uint[] values = [
-			conf.oldx+e.root_x,
-			conf.oldy+e.root_y,
-		];
-		xcb_configure_window(conf.conn, conf.focusing.window, cast(ushort)(XCB_CONFIG_WINDOW_X|XCB_CONFIG_WINDOW_Y), values.ptr);
-		xcb_flush(conf.conn);
+	if (auto client = e.event in conf.clients) {
+		if (*client == conf.is_moving) {
+			uint[] values = [
+				conf.oldx+e.root_x,
+				conf.oldy+e.root_y,
+			];
+			xcb_configure_window(conf.conn, conf.focusing.frame, cast(ushort)(XCB_CONFIG_WINDOW_X|XCB_CONFIG_WINDOW_Y), values.ptr);
+			xcb_flush(conf.conn);
 
-		infof("moving to (%d, %d)", values[0], values[1]);
+			infof("moving to (%d, %d)", values[0], values[1]);
+		}
 	}
 }
 void buttonrelease(Conf conf, xcb_button_release_event_t* e) {
 	if (e.detail == XCB_BUTTON_INDEX_1 || !(e.state & XCB_MOD_MASK_1)) {
-		conf.is_moving = false;
+		conf.is_moving = null;
 		info("end to move window");
 	}
 }

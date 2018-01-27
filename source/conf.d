@@ -41,7 +41,7 @@ public:
 	Client focusing;
 
 	// for move window
-	bool is_moving = false;
+	Client is_moving = null;
 	int oldx, oldy;
 	int winx, winy;
 
