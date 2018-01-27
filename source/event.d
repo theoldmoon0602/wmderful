@@ -77,10 +77,7 @@ void buttonrelease(Conf conf, xcb_button_release_event_t* e) {
 
 void destroynotify(Conf conf, xcb_destroy_notify_event_t* e) {
 	if (auto client = e.window in conf.clients) {
-		conf.clients.remove(e.window);
-		if (*client is conf.focusing) {
-			conf.focusing = null;
-		}
+		quit_cilent(conf, *client);
 		info("unmanage window: ", e.window);
 	}
 }
