@@ -1,0 +1,17 @@
+{
+	"name": "wmderful",
+	"authors": [
+		"theoldmoon0602"
+	],
+	"dependencies": {
+		"xcb-d": "~>2.1.0",
+		"xkbcommon-d": "~>0.5.1"
+	},
+	"libs": [
+		"xcb-keysyms",
+		"xcb-xkb"
+	],
+	"description": "window manager by D",
+	"copyright": "Copyright © 2018, theoldmoon0602",
+	"license": "MIT"
+}
