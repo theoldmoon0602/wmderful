@@ -1,0 +1,7 @@
+{
+	"fileVersion": 1,
+	"versions": {
+		"xcb-d": "2.1.0+1.11.1",
+		"xkbcommon-d": "0.5.1"
+	}
+}
