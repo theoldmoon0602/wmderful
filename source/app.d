@@ -1,5 +1,9 @@
 import xcb.xcb;
 
+import event_string;
+
+import std.stdio;
+import std.conv;
 import std.experimental.logger;
 
 void main(string[] argv)
@@ -36,5 +40,12 @@ void main(string[] argv)
 		fatal("another window manager is already running.");
 	}
 	info("wmderful started!");
+
+	// event loop
+	for (;;) {
+		// block for event
+		auto event = xcb_wait_for_event(conn);
+		writeln(event.to!string());
+	}
 
 }
