@@ -34,18 +34,23 @@ void main(string[] argv)
 	//
 	// xcb_request_check returns xcb_generic_error_t* type value if error occured
 	// otherwise returns null
-	immutable(uint) ROOT_EVENT_MASK = XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT;
+	uint ROOT_EVENT_MASK =
+		XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT|  // ConfigureRequest, MapRequest
+		XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY|  // ConfigureNotify, CreateNotify, DestroyNotify, MapNotify, UnmapNotify
+		XCB_EVENT_MASK_KEY_PRESS|  // KeyPress
+		XCB_EVENT_MASK_KEY_RELEASE;  // KeyRelease
 	auto cookie = xcb_change_window_attributes_checked(conn, root, XCB_CW_EVENT_MASK, &ROOT_EVENT_MASK);
 	if (xcb_request_check(conn, cookie) !is null) {
 		fatal("another window manager is already running.");
 	}
 	info("wmderful started!");
 
+
 	// event loop
 	for (;;) {
 		// block for event
 		auto event = xcb_wait_for_event(conn);
-		writeln(event.to!string());
+		writeln(event.toString());
 	}
 
 }
