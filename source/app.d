@@ -23,6 +23,11 @@ void main(string[] argv)
 			auto e = cast(xcb_map_request_event_t*)event;
 			on_map_request(ctx, e);
 			break;
+		case XCB_CONFIGURE_REQUEST:
+			// when changing window information is requested
+			auto e = cast(xcb_configure_request_event_t*)event;
+			on_configure_request(ctx, e);
+			break;
 		default:
 			break;
 		}
