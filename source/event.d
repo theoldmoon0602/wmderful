@@ -54,4 +54,5 @@ void on_configure_request(Context ctx, xcb_configure_request_event_t* e)
 	}
 
 	xcb_configure_window(ctx.conn, window, value_mask, value_list.ptr);
+	xcb_flush(ctx.conn);
 }
