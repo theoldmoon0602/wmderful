@@ -11,6 +11,17 @@ void on_map_request(Context ctx, xcb_map_request_event_t* e)
 {
 	xcb_window_t window = e.window;  // target of request
 	xcb_map_window(ctx.conn, window);
+	xcb_grab_button(ctx.conn, 1, // 1: tell event to window, 0: not
+			window,
+			XCB_EVENT_MASK_BUTTON_PRESS|
+			XCB_EVENT_MASK_BUTTON_RELEASE|
+			XCB_EVENT_MASK_POINTER_MOTION,
+			XCB_GRAB_MODE_ASYNC, // pointer mode
+			XCB_GRAB_MODE_ASYNC, // keyboard mode
+			XCB_NONE, XCB_NONE, // confine_to, cursor,
+			XCB_BUTTON_INDEX_ANY,  // any buttons (left, right, middle and...)
+			XCB_MOD_MASK_ANY // any key combinations
+	);
 	xcb_flush(ctx.conn);
 }
 
