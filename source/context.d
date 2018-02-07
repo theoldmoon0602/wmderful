@@ -16,4 +16,17 @@ public:
 	// variables
 	xcb_connection_t* conn;  /// connection to the X server
 	xcb_screen_t* screen;   /// default screen
+	MoveContext moving;  /// move window context
+}
+
+/// window moving context
+class MoveContext
+{
+public:
+	xcb_window_t window;
+	int oldx, oldy;
+	this(xcb_window_t window)
+	{
+		this.window = window;
+	}
 }

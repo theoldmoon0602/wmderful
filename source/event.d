@@ -4,6 +4,7 @@ module event;
 import context;
 
 import xcb.xcb;
+import std.experimental.logger;
 
 /// handling map request event
 /// pass the arguments to xcb_map_window
@@ -66,4 +67,52 @@ void on_configure_request(Context ctx, xcb_configure_request_event_t* e)
 
 	xcb_configure_window(ctx.conn, window, value_mask, value_list.ptr);
 	xcb_flush(ctx.conn);
+}
+
+/// handling mouse button press
+void on_button_press(Context ctx, xcb_button_press_event_t* e)
+{
+	xcb_window_t window = e.event;  // button pressed window
+	if (e.detail == XCB_BUTTON_INDEX_1 && (e.state & XCB_MOD_MASK_1)) {  // left button and Alt Key
+		auto geometry_c = xcb_get_geometry(ctx.conn, window);
+		auto geometry_r = xcb_get_geometry_reply(ctx.conn, geometry_c, null);
+		if (geometry_r is null) {
+			warning("failed to get geometry");
+			return;
+		}
+
+		ctx.moving = new MoveContext(window);
+		ctx.moving.oldx = geometry_r.x-e.root_x;
+		ctx.moving.oldy = geometry_r.y-e.root_y;
+
+		info("start to move window");
+	}
+
+	// raise up window
+	uint[] values = [XCB_STACK_MODE_ABOVE];
+	xcb_configure_window(ctx.conn, window, XCB_CONFIG_WINDOW_STACK_MODE, values.ptr);
+	xcb_flush(ctx.conn);
+}
+
+/// handling mouse pointer motion event
+void on_motion_notify(Context ctx, xcb_motion_notify_event_t* e)
+{
+	xcb_window_t window = e.event;  // mouse moved on this window
+	if (ctx.moving !is null) {
+		// calculate window moved position
+		uint[] values = [
+			ctx.moving.oldx + e.root_x,
+			ctx.moving.oldy + e.root_y,
+		];
+		xcb_configure_window(ctx.conn, window,
+				cast(ushort)(XCB_CONFIG_WINDOW_X|XCB_CONFIG_WINDOW_Y),
+				values.ptr);
+		xcb_flush(ctx.conn);
+	}
+}
+
+/// handling mouse button release
+void on_button_release(Context ctx, xcb_button_release_event_t* e)
+{
+	ctx.moving = null;
 }

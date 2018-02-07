@@ -28,6 +28,21 @@ void main(string[] argv)
 			auto e = cast(xcb_configure_request_event_t*)event;
 			on_configure_request(ctx, e);
 			break;
+		case XCB_BUTTON_PRESS:
+			// when mouse button pressed
+			auto e = cast(xcb_button_press_event_t*)event;
+			on_button_press(ctx, e);
+			break;
+		case XCB_MOTION_NOTIFY:
+			// when mouse cursor dragged
+			auto e = cast(xcb_motion_notify_event_t*)event;
+			on_motion_notify(ctx, e);
+			break;
+		case XCB_BUTTON_RELEASE:
+			// when mouse cursor dragged
+			auto e = cast(xcb_button_release_event_t*)event;
+			on_button_release(ctx, e);
+			break;
 		default:
 			break;
 		}
